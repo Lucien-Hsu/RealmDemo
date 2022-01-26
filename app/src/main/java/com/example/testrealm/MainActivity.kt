@@ -12,11 +12,13 @@ import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.withCreated
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import io.realm.*
 import io.realm.annotations.PrimaryKey
 import io.realm.annotations.Required
+import io.realm.kotlin.delete
 import io.realm.kotlin.where
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -172,6 +174,7 @@ class MainActivity : AppCompatActivity() {
             //從資料庫取出所有資料
             memos.forEachIndexed { index, memo ->
                 val data = mutableMapOf<String, Any>()
+                data["id"] = memo.id
                 data["star"] = (memo.status == MemoStatus.Important.name)
                 data["memo"] = memo.memoContent
                 itemList.add(data)
@@ -226,9 +229,35 @@ class MainActivity : AppCompatActivity() {
             }
             R.id.item_edit -> {
                 //TODO
+//                lifecycleScope.launch {
+//                    //用參數建立 Realm 物件
+//                    val backgroundThreadRealm : Realm = Realm.getInstance(config)
+//
+//                    //「查詢」
+//                    // 取出所有 realm 中的 memo
+//                    val memos = backgroundThreadRealm.where<Memo>().findAll()
+//                    Log.d("TAG", "查詢 memos: $memos")
+//
+//                    //「修改」
+//                    // 取出 memo
+//                    var otherMemo: Memo = memos[0]!!
+//                    Log.d("TAG", "修改 otherMemo 前: $otherMemo")
+//                    // 所有對 realm 的修改都必須在 write block 內
+//                    backgroundThreadRealm.executeTransaction { transactionRealm ->
+//                        val innerOtherMemo : Memo = transactionRealm.where<Memo>().equalTo("id", otherMemo.id).findFirst()!!
+//                        innerOtherMemo.status = MemoStatus.Important.name
+//                    }
+//                    Log.d("TAG", "修改 otherMemo 後（此時 otherMemo 值會自動更新）: $otherMemo")
+//                    Log.d("TAG", "查詢 memos（此時 memos 值會自動更新）: $memos")
+//
+//
+//                    //最後要釋放 Realm 物件
+//                    backgroundThreadRealm.close()
+//                }
             }
             R.id.item_delete -> {
-                //TODO
+                deleteMemo()
+                adapter.deleteItem()
             }
             R.id.item_delete_all -> {
                 //刪除記事
@@ -237,6 +266,37 @@ class MainActivity : AppCompatActivity() {
         }
 
         return super.onOptionsItemSelected(item)
+    }
+
+    /**
+     * 刪除單筆資料庫與 recyclerView 資料
+     */
+    private fun deleteMemo() {
+        //刪除資料庫資料
+        lifecycleScope.launch(Dispatchers.IO) {
+            //用參數建立 Realm 物件
+            val backgroundThreadRealm: Realm = Realm.getInstance(config)
+
+            //「刪除」
+            val yetAnotherMemoId = adapter.itemDBId
+            if(yetAnotherMemoId > 0){
+                Log.d("TAG", "要刪除的 memo Id: $yetAnotherMemoId")
+                // 所有對 realm 的修改都必須在 write block 內
+                backgroundThreadRealm.executeTransaction { transactionRealm ->
+                    val innerYetAnotherMemo : Memo = transactionRealm.where<Memo>().equalTo("id", yetAnotherMemoId).findFirst()!!
+                    innerYetAnotherMemo.deleteFromRealm()
+                }
+
+                //最後要釋放 Realm 物件
+                backgroundThreadRealm.close()
+
+                adapter.itemDBId = -1
+            }else{
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(applicationContext, "請選擇要刪除的項目", Toast.LENGTH_SHORT).show()
+                }
+            }
+        }
     }
 
     /**
@@ -268,8 +328,6 @@ class MainActivity : AppCompatActivity() {
      * 新增資料庫與 recyclerView 資料
      */
     private fun addMemo(memoStr: String) {
-        val memo = Memo()
-
         //新增資料庫資料
         lifecycleScope.launch(Dispatchers.IO) {
             //用參數建立 Realm 物件
@@ -279,10 +337,12 @@ class MainActivity : AppCompatActivity() {
             val memos = backgroundThreadRealm.where<Memo>().findAll()
 
             //「新增」
+            val memo = Memo()
             //遞增流水號
             memo.id = (memos.max("id") as Long? ?: 0) + 1
             memo.status = MemoStatus.Important.name
             memo.memoContent = memoStr
+            Log.d("TAG", "新增前的 memos: $memos")
             // 所有對 realm 的修改都必須在 write block 內
             backgroundThreadRealm.executeTransaction { transactionRealm ->
                 transactionRealm.insert(memo)
@@ -293,8 +353,8 @@ class MainActivity : AppCompatActivity() {
             //資料庫讀出來的資料只會在該執行緒存在，所以這邊如果寫在協程區塊外是抓不到資料的
             withContext(Dispatchers.Main) {
                 //新增 recyclerView 資料
-                adapter.addItem(memo.status, memo.memoContent)
-                Log.d("TAG", "[新增 memo 到畫面] id: ${memo.id} memoContent: ${memo.memoContent}")
+                adapter.addItem(memo.id, memo.status, memo.memoContent)
+//                Log.d("TAG", "[新增 memo 到畫面] id: ${memo.id} memoContent: ${memo.memoContent}")
                 Toast.makeText(applicationContext, "新增成功！", Toast.LENGTH_SHORT).show()
             }
 

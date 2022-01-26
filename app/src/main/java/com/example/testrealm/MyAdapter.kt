@@ -15,6 +15,9 @@ import androidx.recyclerview.widget.RecyclerView.Adapter
 //我們通常會把這個繼承 RecyclerView.ViewHolder 的類別作爲自定義 Adapter 的內部類別
 class MyAdapter(private val context: Context, private val dataList: ArrayList<Map<String, Any>>): Adapter<MyAdapter.ViewHolder>() {
 
+    var clickPosition = -1
+    var itemDBId: Long = -1
+
     //建立ViewHolder
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         //以 context 建立 LayoutInflater
@@ -25,13 +28,15 @@ class MyAdapter(private val context: Context, private val dataList: ArrayList<Ma
 
     //將資料連接到 ViewHolder，主要的畫面呈現邏輯寫在這
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        holder.itemTvId.text = (dataList[position]["id"] as Long?).toString()
+
         if(dataList[position]["star"] as Boolean){
-            holder.itemImg.setImageResource(R.drawable.ic_baseline_star_24)
+            holder.itemImgStar.setImageResource(R.drawable.ic_baseline_star_24)
         }else{
-            holder.itemImg.setImageResource(R.drawable.ic_baseline_star_outline_24)
+            holder.itemImgStar.setImageResource(R.drawable.ic_baseline_star_outline_24)
         }
 
-        holder.itemText.text = dataList[position]["memo"] as String
+        holder.itemTvContent.text = dataList[position]["memo"] as String
     }
 
     override fun getItemCount(): Int {
@@ -40,25 +45,43 @@ class MyAdapter(private val context: Context, private val dataList: ArrayList<Ma
     }
 
     //定義 ViewHolder 內部類別，必須繼承 RecyclerView.ViewHolder
+    //點擊監聽寫在這
     inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView){
-        val itemImg = itemView.findViewById<ImageView>(R.id.img)
-        val itemText = itemView.findViewById<TextView>(R.id.tv)
+        val itemTvId = itemView.findViewById<TextView>(R.id.tv_id)
+        val itemImgStar = itemView.findViewById<ImageView>(R.id.img)
+        val itemTvContent = itemView.findViewById<TextView>(R.id.tv_content)
 
         init {
             //項目點擊監聽器
             itemView.setOnClickListener {
-                Toast.makeText(context, "${itemText.text}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "[Click] itemId: ${itemTvId.text} + memo: ${itemTvContent.text}", Toast.LENGTH_SHORT).show()
+                //記錄點擊項目的索引值
+                clickPosition = adapterPosition
+                //記錄點擊的項目之資料庫索引
+                itemDBId = itemTvId.text.toString().toLong()
             }
         }
     }
 
+    //刪除一個項目
+    fun deleteItem(){
+        //清除資料
+        if(clickPosition >= 0){
+            dataList.removeAt(clickPosition)
+            //更新移除的項目之畫面
+            notifyItemRemoved(clickPosition)
+            clickPosition = -1
+        }
+
+    }
+
     //新增一個項目
-    fun addItem(status: String = MemoStatus.Normal.name, memoContent: String){
+    fun addItem(id: Long, status: String = MemoStatus.Normal.name, memoContent: String){
         val star = (status == MemoStatus.Important.name)
         //新增資料
-        dataList.add(0, mapOf(Pair("star", star),Pair("memo", memoContent)))
+        dataList.add(mapOf(Pair("id", id), Pair("star", star), Pair("memo", memoContent)))
         //更新插入的項目畫面
-        notifyItemInserted(0)
+        notifyItemInserted(itemCount)
     }
 
     //刪除全部項目

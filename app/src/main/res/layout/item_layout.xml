@@ -5,27 +5,37 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+    <TextView
+        android:id="@+id/tv_id"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="8dp"
+        android:text="TextView"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@+id/img"
+        app:layout_constraintTop_toTopOf="parent" />
+
     <ImageView
         android:id="@+id/img"
         android:layout_width="24dp"
         android:layout_height="24dp"
         android:layout_marginStart="8dp"
-        android:layout_marginTop="24dp"
-        android:layout_marginBottom="24dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintBottom_toBottomOf="@+id/tv_id"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toTopOf="@+id/tv_id"
         tools:srcCompat="@drawable/ic_baseline_star_24" />
 
     <TextView
-        android:id="@+id/tv"
+        android:id="@+id/tv_content"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginStart="24dp"
+        android:layout_marginStart="16dp"
         android:text="TextView"
         android:textColor="#FFAE36"
         android:textSize="24sp"
         app:layout_constraintBottom_toBottomOf="@+id/img"
-        app:layout_constraintStart_toEndOf="@+id/img"
+        app:layout_constraintStart_toEndOf="@+id/tv_id"
         app:layout_constraintTop_toTopOf="@+id/img" />
 </androidx.constraintlayout.widget.ConstraintLayout>
