@@ -12,13 +12,11 @@ import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import androidx.lifecycle.lifecycleScope
-import androidx.lifecycle.withCreated
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import io.realm.*
 import io.realm.annotations.PrimaryKey
 import io.realm.annotations.Required
-import io.realm.kotlin.delete
 import io.realm.kotlin.where
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -160,8 +158,8 @@ class MainActivity : AppCompatActivity() {
     //從 realm 資料庫取得 recyclerView 所需資料
     //應使用 RealmBaseAdapter，之後有空再研究：
     //https://github.com/realm/realm-android-adapters/blob/master/adapters/src/main/java/io/realm/RealmBaseAdapter.java
-    private fun getItemList(): ArrayList<Map<String, Any>>{
-        val itemList = arrayListOf<Map<String, Any>>()
+    private fun getItemList(): ArrayList<MutableMap<String, Any>>{
+        val itemList = arrayListOf<MutableMap<String, Any>>()
         lifecycleScope.launch(Dispatchers.IO) {
             //用參數建立 Realm 物件
             val backgroundThreadRealm: Realm = Realm.getInstance(config)
@@ -228,44 +226,75 @@ class MainActivity : AppCompatActivity() {
 
             }
             R.id.item_edit -> {
-                //TODO
-//                lifecycleScope.launch {
-//                    //用參數建立 Realm 物件
-//                    val backgroundThreadRealm : Realm = Realm.getInstance(config)
-//
-//                    //「查詢」
-//                    // 取出所有 realm 中的 memo
-//                    val memos = backgroundThreadRealm.where<Memo>().findAll()
-//                    Log.d("TAG", "查詢 memos: $memos")
-//
-//                    //「修改」
-//                    // 取出 memo
-//                    var otherMemo: Memo = memos[0]!!
-//                    Log.d("TAG", "修改 otherMemo 前: $otherMemo")
-//                    // 所有對 realm 的修改都必須在 write block 內
-//                    backgroundThreadRealm.executeTransaction { transactionRealm ->
-//                        val innerOtherMemo : Memo = transactionRealm.where<Memo>().equalTo("id", otherMemo.id).findFirst()!!
-//                        innerOtherMemo.status = MemoStatus.Important.name
-//                    }
-//                    Log.d("TAG", "修改 otherMemo 後（此時 otherMemo 值會自動更新）: $otherMemo")
-//                    Log.d("TAG", "查詢 memos（此時 memos 值會自動更新）: $memos")
-//
-//
-//                    //最後要釋放 Realm 物件
-//                    backgroundThreadRealm.close()
-//                }
+                //修改記事
+                editMemo()
             }
             R.id.item_delete -> {
+                //刪除記事
                 deleteMemo()
                 adapter.deleteItem()
             }
             R.id.item_delete_all -> {
-                //刪除記事
+                //刪除全部記事
                 deleteAllMemos()
             }
         }
 
         return super.onOptionsItemSelected(item)
+    }
+
+    /**
+     * 修改資料庫與 recyclerView 資料
+     */
+    private fun editMemo() {
+        //取得當前選項的編號
+        val yetAnotherMemoId = adapter.itemDBId
+        //若有選擇項目則做
+        if (yetAnotherMemoId > 0) {
+            //1.先設定View並取出
+            val item = LayoutInflater.from(this@MainActivity).inflate(R.layout.dialog_add_layout, null)
+
+            //2.創建對話框
+            AlertDialog.Builder(this@MainActivity)
+                .setTitle("請輸入修改內容")
+                .setView(item)
+                .setPositiveButton("確認") { _, _ ->
+                    //把輸入的內容取出
+                    val editText = item.findViewById<EditText>(R.id.et)
+                    val memoStr = editText.text.toString()
+
+                    if (TextUtils.isEmpty(memoStr)) {
+                        //若沒輸入內容則跳出提醒
+                        Toast.makeText(applicationContext, "請輸入修改內容", Toast.LENGTH_SHORT).show()
+                    } else {
+                        //修改資料庫資料
+                        lifecycleScope.launch(Dispatchers.IO){
+                            //用參數建立 Realm 物件
+                            val backgroundThreadRealm: Realm = Realm.getInstance(config)
+                            //修改記事
+                            Log.d("TAG", "要修改的 memo Id: $yetAnotherMemoId")
+                            // 所有對 realm 的修改都必須在 write block 內
+                            backgroundThreadRealm.executeTransaction { transactionRealm ->
+                                val innerYetAnotherMemo: Memo =
+                                    transactionRealm.where<Memo>().equalTo("id", yetAnotherMemoId).findFirst()!!
+                                innerYetAnotherMemo.memoContent = memoStr
+                            }
+
+                            //最後要釋放 Realm 物件
+                            backgroundThreadRealm.close()
+                            //重置點擊位置
+                            adapter.itemDBId = -1
+                        }
+
+                        //刷新 recyclerView 畫面
+                        adapter.editItem(memoStr)
+                    }
+                }
+                .show()
+        } else {
+            //未選擇項目則跳出提醒
+            Toast.makeText(applicationContext, "請選擇要修改的項目", Toast.LENGTH_SHORT).show()
+        }
     }
 
     /**
@@ -289,7 +318,7 @@ class MainActivity : AppCompatActivity() {
 
                 //最後要釋放 Realm 物件
                 backgroundThreadRealm.close()
-
+                //重置點擊位置
                 adapter.itemDBId = -1
             }else{
                 withContext(Dispatchers.Main) {

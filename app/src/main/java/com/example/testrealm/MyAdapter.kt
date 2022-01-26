@@ -1,6 +1,7 @@
 package com.example.testrealm
 
 import android.content.Context
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -13,7 +14,7 @@ import androidx.recyclerview.widget.RecyclerView.Adapter
 //建立自定義 Adapter
 //需要繼承 RecyclerView.Adapter，並且此類別會有一個泛型參數，此參數需要是一個繼承 RecyclerView.ViewHolder 的類別
 //我們通常會把這個繼承 RecyclerView.ViewHolder 的類別作爲自定義 Adapter 的內部類別
-class MyAdapter(private val context: Context, private val dataList: ArrayList<Map<String, Any>>): Adapter<MyAdapter.ViewHolder>() {
+class MyAdapter(private val context: Context, private val dataList: ArrayList<MutableMap<String, Any>>): Adapter<MyAdapter.ViewHolder>() {
 
     var clickPosition = -1
     var itemDBId: Long = -1
@@ -63,6 +64,40 @@ class MyAdapter(private val context: Context, private val dataList: ArrayList<Ma
         }
     }
 
+    fun editItem(newStr: String){
+        //修改資料
+        if(clickPosition >= 0){
+
+            dataList.forEach{ map ->
+                if(map["id"] == itemDBId ){
+                    map["memoContent"] = newStr
+                    Log.d("TAG", "memo Id: ${map["id"]} 已修改爲： ${map["memoContent"]}")
+                }
+            }
+            //TODO 還不能成功刷新畫面
+
+            //更新修改的項目之畫面
+//            notifyItemChanged(clickPosition)
+            notifyDataSetChanged()
+            //重置點擊位置
+            clickPosition = -1
+        }
+    }
+
+
+    //新增一個項目
+    fun addItem(id: Long, status: String = MemoStatus.Normal.name, memoContent: String){
+        val star = (status == MemoStatus.Important.name)
+        //新增資料
+        dataList.add(mutableMapOf(
+            Pair("id", id),
+            Pair("star", star),
+            Pair("memo", memoContent)
+        ))
+        //更新插入的項目畫面
+        notifyItemInserted(itemCount)
+    }
+
     //刪除一個項目
     fun deleteItem(){
         //清除資料
@@ -70,18 +105,9 @@ class MyAdapter(private val context: Context, private val dataList: ArrayList<Ma
             dataList.removeAt(clickPosition)
             //更新移除的項目之畫面
             notifyItemRemoved(clickPosition)
+            //重置點擊位置
             clickPosition = -1
         }
-
-    }
-
-    //新增一個項目
-    fun addItem(id: Long, status: String = MemoStatus.Normal.name, memoContent: String){
-        val star = (status == MemoStatus.Important.name)
-        //新增資料
-        dataList.add(mapOf(Pair("id", id), Pair("star", star), Pair("memo", memoContent)))
-        //更新插入的項目畫面
-        notifyItemInserted(itemCount)
     }
 
     //刪除全部項目
