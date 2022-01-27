@@ -11,7 +11,6 @@ import io.realm.kotlin.where
 import kotlinx.coroutines.*
 
 class MyViewModel: ViewModel() {
-    var uiThreadRealm: Realm
     var config: RealmConfiguration
 
     init{
@@ -21,47 +20,6 @@ class MyViewModel: ViewModel() {
             .name(realmName)
 //            .allowWritesOnUiThread(true)    //可跑在 UI thread
             .build()
-
-        //用參數建立 Realm 物件
-        uiThreadRealm = Realm.getInstance(config)
-
-        //添加變化監聽器
-        var memos : RealmResults<Memo> = uiThreadRealm.where<Memo>().findAllAsync()
-        memos.addChangeListener(OrderedRealmCollectionChangeListener<RealmResults<Memo>> { collection, changeSet ->
-            Log.d("TAG", "資料有改變")
-
-            //取得刪除範圍
-            val deletions = changeSet.deletionRanges
-            Log.d("TAG", "deletions：$deletions")
-            Log.d("TAG", "deletions size：${deletions.size}")
-            // process deletions in reverse order if maintaining parallel data structures so indices don't change as you iterate
-            for (i in deletions.indices.reversed()) {
-                //「刪除」可能會有多個範圍
-                val range = deletions[i]
-                Log.d("TAG", "Deleted range: ${range.startIndex} to ${range.startIndex + range.length - 1}")
-            }
-
-            //取得新增範圍
-            val insertions = changeSet.insertionRanges
-            Log.d("TAG", "insertions：$insertions")
-            Log.d("TAG", "insertions size：${insertions.size}")
-            for (range in insertions) {
-                Log.d("TAG", "Inserted range: ${range.startIndex} to ${range.startIndex + range.length - 1}")
-            }
-
-            //取得修改範圍
-            val modifications = changeSet.changeRanges
-            Log.d("TAG", "modifications：$modifications")
-            Log.d("TAG", "modifications size：${modifications.size}")
-            for (range in modifications) {
-                Log.d("TAG", "Updated range: ${range.startIndex} to ${range.startIndex + range.length - 1}")
-            }
-        })
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        releaseDB()
     }
 
     /**
@@ -217,13 +175,6 @@ class MyViewModel: ViewModel() {
             //最後要釋放 Realm 物件
             backgroundThreadRealm.close()
         }
-    }
-
-    /**
-     * 釋放 Realm 物件
-     */
-    fun releaseDB(){
-        uiThreadRealm.close()
     }
 
     /**

@@ -55,9 +55,6 @@ class MainActivity : AppCompatActivity() {
 
     override fun onDestroy() {
         super.onDestroy()
-        //釋放 Realm 物件
-        myViewModel.releaseDB()
-
         rc.adapter = null
     }
 
