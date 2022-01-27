@@ -14,7 +14,7 @@ import androidx.recyclerview.widget.RecyclerView.Adapter
 //建立自定義 Adapter
 //需要繼承 RecyclerView.Adapter，並且此類別會有一個泛型參數，此參數需要是一個繼承 RecyclerView.ViewHolder 的類別
 //我們通常會把這個繼承 RecyclerView.ViewHolder 的類別作爲自定義 Adapter 的內部類別
-class MyAdapter(private val context: Context, private val dataList: ArrayList<MutableMap<String, Any>>): Adapter<MyAdapter.ViewHolder>() {
+class MyAdapter(private val context: Context, private val dataList: ArrayList<MyData>): Adapter<MyAdapter.ViewHolder>() {
 
     var clickPosition = -1
     var itemDBId: Long = -1
@@ -36,14 +36,14 @@ class MyAdapter(private val context: Context, private val dataList: ArrayList<Mu
 
     //將資料連接到 ViewHolder，主要的畫面呈現邏輯寫在這
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        holder.itemTvId.text = (dataList[position]["id"] as Long?).toString()
+        holder.itemTvId.text = (dataList[position].id as Long?).toString()
 
-        if(dataList[position]["star"] as Boolean){
+        if(dataList[position].star){
             holder.itemImgStar.setImageResource(R.drawable.ic_baseline_star_24)
         }else{
             holder.itemImgStar.setImageResource(R.drawable.ic_baseline_star_outline_24)
         }
-        holder.itemTvContent.text = dataList[position]["memo"] as String
+        holder.itemTvContent.text = dataList[position].memo as String
     }
 
     //定義 ViewHolder 內部類別，必須繼承 RecyclerView.ViewHolder
@@ -72,11 +72,7 @@ class MyAdapter(private val context: Context, private val dataList: ArrayList<Mu
     fun addItem(id: Long, status: String = MemoStatus.Normal.name, memoContent: String){
         val star = (status == MemoStatus.Important.name)
         //新增資料
-        dataList.add(mutableMapOf(
-            Pair("id", id),
-            Pair("star", star),
-            Pair("memo", memoContent)
-        ))
+        dataList.add(MyData(id, star, memoContent))
         //更新畫面上插入的項目
         notifyItemInserted(itemCount)
     }
@@ -88,10 +84,10 @@ class MyAdapter(private val context: Context, private val dataList: ArrayList<Mu
         //若有選擇一個項目
         if(clickPosition >= 0){
             //找出點擊位置的項目，將其資料內容更改
-            dataList.forEach{ map ->
-                if(map["id"] == itemDBId ){
-                    map["memo"] = newStr
-                    Log.d("TAG", "memo Id: ${map["id"]} 已修改爲： ${map["memo"]}")
+            dataList.forEach{ data ->
+                if(data.id == itemDBId ){
+                    data.memo = newStr
+                    Log.d("TAG", "memo Id: ${data.id} 已修改爲： ${data.memo}")
                 }
             }
 

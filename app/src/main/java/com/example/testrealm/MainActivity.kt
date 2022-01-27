@@ -158,8 +158,8 @@ class MainActivity : AppCompatActivity() {
     //從 realm 資料庫取得 recyclerView 所需資料
     //應使用 RealmBaseAdapter，之後有空再研究：
     //https://github.com/realm/realm-android-adapters/blob/master/adapters/src/main/java/io/realm/RealmBaseAdapter.java
-    private fun getItemList(): ArrayList<MutableMap<String, Any>>{
-        val itemList = arrayListOf<MutableMap<String, Any>>()
+    private fun getItemList(): ArrayList<MyData>{
+        val itemList = arrayListOf<MyData>()
         lifecycleScope.launch(Dispatchers.IO) {
             //用參數建立 Realm 物件
             val backgroundThreadRealm: Realm = Realm.getInstance(config)
@@ -171,10 +171,11 @@ class MainActivity : AppCompatActivity() {
 
             //從資料庫取出所有資料
             memos.forEachIndexed { index, memo ->
-                val data = mutableMapOf<String, Any>()
-                data["id"] = memo.id
-                data["star"] = (memo.status == MemoStatus.Important.name)
-                data["memo"] = memo.memoContent
+                val data = MyData(
+                    memo.id,
+                    (memo.status == MemoStatus.Important.name),
+                    memo.memoContent
+                )
                 itemList.add(data)
             }
 
@@ -369,7 +370,7 @@ class MainActivity : AppCompatActivity() {
             val memo = Memo()
             //遞增流水號
             memo.id = (memos.max("id") as Long? ?: 0) + 1
-            memo.status = MemoStatus.Important.name
+            memo.status = MemoStatus.Normal.name
             memo.memoContent = memoStr
             Log.d("TAG", "新增前的 memos: $memos")
             // 所有對 realm 的修改都必須在 write block 內
