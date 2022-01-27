@@ -19,6 +19,7 @@ class MyViewModel: ViewModel() {
         config = RealmConfiguration.Builder()
             .name(realmName)
 //            .allowWritesOnUiThread(true)    //可跑在 UI thread
+            .deleteRealmIfMigrationNeeded()   //在需要資料庫遷移時直接刪掉資料庫
             .build()
     }
 
