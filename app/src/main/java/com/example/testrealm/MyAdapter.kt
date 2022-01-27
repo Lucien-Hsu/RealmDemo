@@ -34,8 +34,8 @@ class MyAdapter(private val context: Context, private val dataList: ArrayList<My
         return ViewHolder(view)
     }
 
-    //將資料連接到 ViewHolder，監聽器與主要的畫面呈現邏輯寫在這
-    //可以在 onBindViewHolder 中取得當前項目索引
+    //將資料連接到 ViewHolder，主要的畫面呈現邏輯寫在這
+    //注意，在 onBindViewHolder 中取得的項目索引是 ViewHolder 的遞增索引，不是 recyclerView 的當前索引
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         holder.itemTvId.text = (dataList[position].id as Long?).toString()
 
@@ -45,23 +45,26 @@ class MyAdapter(private val context: Context, private val dataList: ArrayList<My
             holder.itemImgStar.setImageResource(R.drawable.ic_baseline_star_outline_24)
         }
         holder.itemTvContent.text = dataList[position].memo
-
-        //項目點擊監聽器
-        holder.itemView.setOnClickListener {
-            Toast.makeText(context, "[Click] itemId: ${holder.itemTvId.text} + memo: ${holder.itemTvContent.text}", Toast.LENGTH_SHORT).show()
-            //記錄點擊項目的索引值
-            clickPosition = position
-            //記錄點擊的項目之資料庫索引
-            itemDBId = holder.itemTvId.text.toString().toLong()
-        }
     }
 
     //定義 ViewHolder 內部類別，必須繼承 RecyclerView.ViewHolder
-    //可以在 ViewHolder 中取得當前項目索引
+    //監聽器寫在此，因爲只能在 ViewHolder 中取得當前項目索引
     inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView){
         val itemTvId: TextView = itemView.findViewById(R.id.tv_id)
         val itemImgStar: ImageView = itemView.findViewById(R.id.img)
         val itemTvContent: TextView = itemView.findViewById(R.id.tv_content)
+
+        init{
+            //項目點擊監聽器
+            itemView.setOnClickListener {
+                Toast.makeText(context, "[Click] itemId: ${itemTvId.text} + memo: ${itemTvContent.text}", Toast.LENGTH_SHORT).show()
+                //記錄點擊項目的索引值
+                clickPosition = adapterPosition
+                //記錄點擊的項目之資料庫索引
+                itemDBId = itemTvId.text.toString().toLong()
+
+            }
+        }
     }
 
     /**
