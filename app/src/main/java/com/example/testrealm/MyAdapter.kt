@@ -69,10 +69,9 @@ class MyAdapter(private val context: Context, private val dataList: ArrayList<My
     /**
      * 新增一個項目
      */
-    fun addItem(id: Long, status: String = MemoStatus.Normal.name, memoContent: String){
-        val star = (status == MemoStatus.Important.name)
+    fun addItem(data: MyData){
         //新增資料
-        dataList.add(MyData(id, star, memoContent))
+        dataList.add(data)
         //更新畫面上插入的項目
         notifyItemInserted(itemCount)
     }
@@ -83,6 +82,7 @@ class MyAdapter(private val context: Context, private val dataList: ArrayList<My
     fun editItem(newStr: String){
         //若有選擇一個項目
         if(clickPosition >= 0){
+            Log.d("TAG", "修改資料庫資料")
             //找出點擊位置的項目，將其資料內容更改
             dataList.forEach{ data ->
                 if(data.id == itemDBId ){
@@ -93,6 +93,8 @@ class MyAdapter(private val context: Context, private val dataList: ArrayList<My
 
             //更新畫面上修改的項目
             notifyItemChanged(clickPosition)
+            //重置點擊位置
+            itemDBId = -1
             //重置點擊位置
             clickPosition = -1
         }
