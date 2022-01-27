@@ -19,10 +19,17 @@ class MyAdapter(private val context: Context, private val dataList: ArrayList<Mu
     var clickPosition = -1
     var itemDBId: Long = -1
 
+    //以 context 建立 LayoutInflater
+    val myLayoutInflater: LayoutInflater = LayoutInflater.from(context)
+
+    //回傳資料筆數
+    override fun getItemCount(): Int {
+        return dataList.size
+    }
+
     //建立ViewHolder
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        //以 context 建立 LayoutInflater
-        val myLayoutInflater: LayoutInflater = LayoutInflater.from(context)
+        //充氣
         val view = myLayoutInflater.inflate(R.layout.item_layout, null)
         return ViewHolder(view)
     }
@@ -36,17 +43,12 @@ class MyAdapter(private val context: Context, private val dataList: ArrayList<Mu
         }else{
             holder.itemImgStar.setImageResource(R.drawable.ic_baseline_star_outline_24)
         }
-
         holder.itemTvContent.text = dataList[position]["memo"] as String
-    }
-
-    override fun getItemCount(): Int {
-        //回傳資料數
-        return dataList.size
     }
 
     //定義 ViewHolder 內部類別，必須繼承 RecyclerView.ViewHolder
     //點擊監聽寫在這
+    //只能在 ViewHolder 中取得當前項目索引
     inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView){
         val itemTvId = itemView.findViewById<TextView>(R.id.tv_id)
         val itemImgStar = itemView.findViewById<ImageView>(R.id.img)
@@ -64,28 +66,9 @@ class MyAdapter(private val context: Context, private val dataList: ArrayList<Mu
         }
     }
 
-    fun editItem(newStr: String){
-        //修改資料
-        if(clickPosition >= 0){
-
-            dataList.forEach{ map ->
-                if(map["id"] == itemDBId ){
-                    map["memoContent"] = newStr
-                    Log.d("TAG", "memo Id: ${map["id"]} 已修改爲： ${map["memoContent"]}")
-                }
-            }
-            //TODO 還不能成功刷新畫面
-
-            //更新修改的項目之畫面
-//            notifyItemChanged(clickPosition)
-            notifyDataSetChanged()
-            //重置點擊位置
-            clickPosition = -1
-        }
-    }
-
-
-    //新增一個項目
+    /**
+     * 新增一個項目
+     */
     fun addItem(id: Long, status: String = MemoStatus.Normal.name, memoContent: String){
         val star = (status == MemoStatus.Important.name)
         //新增資料
@@ -94,23 +77,49 @@ class MyAdapter(private val context: Context, private val dataList: ArrayList<Mu
             Pair("star", star),
             Pair("memo", memoContent)
         ))
-        //更新插入的項目畫面
+        //更新畫面上插入的項目
         notifyItemInserted(itemCount)
     }
 
-    //刪除一個項目
-    fun deleteItem(){
-        //清除資料
+    /**
+     * 編輯一個項目
+     */
+    fun editItem(newStr: String){
+        //若有選擇一個項目
         if(clickPosition >= 0){
+            //找出點擊位置的項目，將其資料內容更改
+            dataList.forEach{ map ->
+                if(map["id"] == itemDBId ){
+                    map["memo"] = newStr
+                    Log.d("TAG", "memo Id: ${map["id"]} 已修改爲： ${map["memo"]}")
+                }
+            }
+
+            //更新畫面上修改的項目
+            notifyItemChanged(clickPosition)
+            //重置點擊位置
+            clickPosition = -1
+        }
+    }
+
+    /**
+     * 刪除一個項目
+     */
+    fun deleteItem(){
+        //若有選擇一個項目
+        if(clickPosition >= 0){
+            //找出點擊位置的項目，將其資料內容刪除
             dataList.removeAt(clickPosition)
-            //更新移除的項目之畫面
+            //更新畫面上移除的項目
             notifyItemRemoved(clickPosition)
             //重置點擊位置
             clickPosition = -1
         }
     }
 
-    //刪除全部項目
+    /**
+     * 刪除全部項目
+     */
     fun deleteAll(){
         //清除資料
         dataList.clear()
