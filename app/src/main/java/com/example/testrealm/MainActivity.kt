@@ -22,8 +22,9 @@ class MainActivity : AppCompatActivity() {
     lateinit var myViewModel: MyViewModel
     lateinit var context:Context
 
+    lateinit var rc: RecyclerView
     //adapter 會用來控制 RecyclerView 畫面更新，所以需全域使用較方便
-    lateinit var adapter: MyAdapter
+    private lateinit var adapter: MyAdapter
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -39,7 +40,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun initRecyclerView() {
         //取得 recyclerView
-        val rc: RecyclerView = findViewById(R.id.rc)
+        rc = findViewById(R.id.rc)
 
         //建立LayoutManager
         val layoutManager = LinearLayoutManager(context)
@@ -56,6 +57,8 @@ class MainActivity : AppCompatActivity() {
         super.onDestroy()
         //釋放 Realm 物件
         myViewModel.releaseDB()
+
+        rc.adapter = null
     }
 
     //此方法會在創造 menu 時呼叫

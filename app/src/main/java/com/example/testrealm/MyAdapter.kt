@@ -34,7 +34,8 @@ class MyAdapter(private val context: Context, private val dataList: ArrayList<My
         return ViewHolder(view)
     }
 
-    //將資料連接到 ViewHolder，主要的畫面呈現邏輯寫在這
+    //將資料連接到 ViewHolder，監聽器與主要的畫面呈現邏輯寫在這
+    //可以在 onBindViewHolder 中取得當前項目索引
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         holder.itemTvId.text = (dataList[position].id as Long?).toString()
 
@@ -43,27 +44,24 @@ class MyAdapter(private val context: Context, private val dataList: ArrayList<My
         }else{
             holder.itemImgStar.setImageResource(R.drawable.ic_baseline_star_outline_24)
         }
-        holder.itemTvContent.text = dataList[position].memo as String
+        holder.itemTvContent.text = dataList[position].memo
+
+        //項目點擊監聽器
+        holder.itemView.setOnClickListener {
+            Toast.makeText(context, "[Click] itemId: ${holder.itemTvId.text} + memo: ${holder.itemTvContent.text}", Toast.LENGTH_SHORT).show()
+            //記錄點擊項目的索引值
+            clickPosition = position
+            //記錄點擊的項目之資料庫索引
+            itemDBId = holder.itemTvId.text.toString().toLong()
+        }
     }
 
     //定義 ViewHolder 內部類別，必須繼承 RecyclerView.ViewHolder
-    //點擊監聽寫在這
-    //只能在 ViewHolder 中取得當前項目索引
+    //可以在 ViewHolder 中取得當前項目索引
     inner class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView){
-        val itemTvId = itemView.findViewById<TextView>(R.id.tv_id)
-        val itemImgStar = itemView.findViewById<ImageView>(R.id.img)
-        val itemTvContent = itemView.findViewById<TextView>(R.id.tv_content)
-
-        init {
-            //項目點擊監聽器
-            itemView.setOnClickListener {
-                Toast.makeText(context, "[Click] itemId: ${itemTvId.text} + memo: ${itemTvContent.text}", Toast.LENGTH_SHORT).show()
-                //記錄點擊項目的索引值
-                clickPosition = adapterPosition
-                //記錄點擊的項目之資料庫索引
-                itemDBId = itemTvId.text.toString().toLong()
-            }
-        }
+        val itemTvId: TextView = itemView.findViewById(R.id.tv_id)
+        val itemImgStar: ImageView = itemView.findViewById(R.id.img)
+        val itemTvContent: TextView = itemView.findViewById(R.id.tv_content)
     }
 
     /**
