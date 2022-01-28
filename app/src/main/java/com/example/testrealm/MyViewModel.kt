@@ -30,30 +30,35 @@ class MyViewModel: ViewModel() {
     /**
      * 爲資料變化設定監聽器
      */
-    fun addChangeListenerToRealm(){
+    fun addChangeListenerToRealm(deleteListener: (Int, Int) -> Unit,
+                                 insertListener: (Int, Int) -> Unit,
+                                 modifyListener: (Int, Int) -> Unit){
         val uiThreadRealm = Realm.getInstance(config)
 
         memosListener = uiThreadRealm.where<Memo>().findAllAsync()
         memosListener.addChangeListener{ collection, changeSet ->
-            Log.d("TAG", "監聽器: 資料變動")
             //刪除範圍
-            // process deletions in reverse order if maintaining parallel data structures so indices don't change as you iterate
             val deletions = changeSet.deletionRanges
-            for (i in deletions.indices.reversed()) {
-                val range = deletions[i]
-                Log.d("TAG", "刪除範圍: ${range.startIndex} to ${range.startIndex + range.length - 1}")
+            for (range in deletions) {
+                deleteListener(range.startIndex, range.length)
             }
+            //想取指標來操作的話可以這樣寫
+            // process deletions in reverse order if maintaining parallel data structures so indices don't change as you iterate
+//            for (i in deletions.indices.reversed()) {
+//                val range = deletions[i]
+//                deleteListener(range.startIndex, range.length)
+//            }
 
             //新增範圍
             val insertions = changeSet.insertionRanges
             for (range in insertions) {
-                Log.d("TAG", "新增範圍: ${range.startIndex} to ${range.startIndex + range.length - 1}")
+                insertListener(range.startIndex, range.length)
             }
 
             //修改範圍
             val modifications = changeSet.changeRanges
             for (range in modifications) {
-                Log.d("TAG", "修改範圍: ${range.startIndex} to ${range.startIndex + range.length - 1}")
+                modifyListener(range.startIndex, range.length)
             }
         }
     }
@@ -111,12 +116,12 @@ class MyViewModel: ViewModel() {
                 memo.id = (memos.max("id") as Long? ?: 0) + 1
                 memo.status = MemoStatus.Normal.name
                 memo.memoContent = dataStr
-                Log.d("TAG", "新增前的 memos: $memos")
+//                Log.d("TAG", "新增前的 memos: $memos")
                 // 所有對 realm 的修改都必須在 write block 內
                 backgroundThreadRealm.executeTransaction { transactionRealm ->
                     transactionRealm.insert(memo)
                 }
-                Log.d("TAG", "[新增 memo 到資料庫] id: ${memo.id} memoContent: ${memo.memoContent}")
+//                Log.d("TAG", "[新增 memo 到資料庫] id: ${memo.id} memoContent: ${memo.memoContent}")
                 Log.d("TAG", "新增後的 memos: $memos")
 
                 val result = true

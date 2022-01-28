@@ -3,6 +3,7 @@ package com.example.testrealm
 import android.content.Context
 import android.os.Bundle
 import android.text.TextUtils
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.Menu
 import android.view.MenuItem
@@ -37,8 +38,24 @@ class MainActivity : AppCompatActivity() {
         //初始化 RecyclerView
         initRecyclerView()
 
+        //先建立三個監聽器所需的操作
+        val deleteListener: (Int, Int) -> Unit = { index, itemCount ->
+            Log.d("TAG", "刪除範圍: 從 $index 開始變動 $itemCount 個項目")
+            //刷新 UI
+            adapter.notifyItemRangeRemoved(index, itemCount - 1)
+        }
+        val insertListener: (Int, Int) -> Unit = { index, itemCount ->
+            Log.d("TAG", "新增範圍: 從 $index 開始變動 $itemCount 個項目")
+            //刷新 UI
+            adapter.notifyItemRangeInserted(index, itemCount - 1)
+        }
+        val modifyListener: (Int, Int) -> Unit = { index, itemCount ->
+            Log.d("TAG", "修改範圍: 從 $index 開始變動 $itemCount 個項目")
+            //刷新 UI
+            adapter.notifyItemRangeChanged(index, itemCount - 1)
+        }
         //爲資料庫變化設定監聽器
-        myViewModel.addChangeListenerToRealm()
+        myViewModel.addChangeListenerToRealm(deleteListener, insertListener, modifyListener)
     }
 
     private fun initRecyclerView() {
