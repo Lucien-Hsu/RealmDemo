@@ -171,6 +171,42 @@ class MyViewModel: ViewModel() {
     }
 
     /**
+     * 修改星星
+     */
+    fun editDBDataStar(dataId: Long, star: Boolean): Boolean = runBlocking {
+        //修改資料庫資料
+        val result = viewModelScope.async(Dispatchers.IO){
+            var resultAsync = false
+            //用參數建立 Realm 物件
+            val backgroundThreadRealm: Realm = Realm.getInstance(config!!)
+
+            if(dataId > 0) {
+                //修改記事
+                Log.d("TAG", "要修改的 Id: $dataId")
+                // 所有對 realm 的修改都必須在 write block 內
+                backgroundThreadRealm.executeTransaction { transactionRealm ->
+                    val innerYetAnotherMemo: Memo =
+                        transactionRealm.where<Memo>().equalTo("id", dataId).findFirst()!!
+                    innerYetAnotherMemo.status = if(star){
+                        MemoStatus.Important.name
+                    }else{
+                        MemoStatus.Normal.name
+                    }
+                }
+
+                //最後要釋放 Realm 物件
+                backgroundThreadRealm.close()
+
+                resultAsync = true
+            }
+
+            resultAsync
+        }
+
+        result.await()
+    }
+
+    /**
      * 刪除一個項目
      */
     fun deleteDBData(dataId: Long): Boolean = runBlocking {

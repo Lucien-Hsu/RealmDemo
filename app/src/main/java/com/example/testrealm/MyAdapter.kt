@@ -8,6 +8,9 @@ import android.view.ViewGroup
 import android.widget.ImageView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.activity.viewModels
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStoreOwner
 import androidx.recyclerview.widget.RecyclerView
 import androidx.recyclerview.widget.RecyclerView.Adapter
 
@@ -15,6 +18,8 @@ import androidx.recyclerview.widget.RecyclerView.Adapter
 //需要繼承 RecyclerView.Adapter，並且此類別會有一個泛型參數，此參數需要是一個繼承 RecyclerView.ViewHolder 的類別
 //我們通常會把這個繼承 RecyclerView.ViewHolder 的類別作爲自定義 Adapter 的內部類別
 class MyAdapter(private val context: Context, private val dataList: ArrayList<MyData>): Adapter<MyAdapter.ViewHolder>() {
+
+    private val myViewModel: MyViewModel = ViewModelProvider(context as ViewModelStoreOwner).get(MyViewModel::class.java)
 
     var clickPosition = -1
     var itemDBId: Long = -1
@@ -39,7 +44,9 @@ class MyAdapter(private val context: Context, private val dataList: ArrayList<My
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
         holder.itemTvId.text = (dataList[position].id as Long?).toString()
 
-        if(dataList[position].star){
+        var isImportant = dataList[position].star
+
+        if(isImportant){
             holder.itemImgStar.setImageResource(R.drawable.ic_baseline_star_24)
         }else{
             holder.itemImgStar.setImageResource(R.drawable.ic_baseline_star_outline_24)
@@ -64,8 +71,39 @@ class MyAdapter(private val context: Context, private val dataList: ArrayList<My
                 itemDBId = itemTvId.text.toString().toLong()
 
             }
+
+            /**
+             * 改變星星標記
+             */
+            itemImgStar.setOnClickListener {
+                //修改畫面星星
+                val itemStar = changeStar()
+
+                //記錄點擊的項目之資料庫索引
+                itemDBId = itemTvId.text.toString().toLong()
+                //修改資料庫內容
+                myViewModel.editDBDataStar(itemDBId, itemStar)
+            }
+        }
+
+        private fun changeStar(): Boolean {
+            //記錄點擊項目的索引值
+            clickPosition = adapterPosition
+
+            val itemStar = !dataList[adapterPosition].star
+            dataList[adapterPosition].star = itemStar
+            if (itemStar) {
+                itemImgStar.setImageResource(R.drawable.ic_baseline_star_24)
+            } else {
+                itemImgStar.setImageResource(R.drawable.ic_baseline_star_outline_24)
+            }
+
+            notifyItemChanged(adapterPosition)
+            return itemStar
         }
     }
+
+
 
     /**
      * 新增一個項目
@@ -73,8 +111,6 @@ class MyAdapter(private val context: Context, private val dataList: ArrayList<My
     fun addItem(data: MyData){
         //新增資料
         dataList.add(data)
-        //更新畫面上插入的項目
-        notifyItemInserted(itemCount)
     }
 
     /**
@@ -92,8 +128,6 @@ class MyAdapter(private val context: Context, private val dataList: ArrayList<My
                 }
             }
 
-            //更新畫面上修改的項目
-            notifyItemChanged(clickPosition)
             //重置點擊位置
             itemDBId = -1
             //重置點擊位置
@@ -109,8 +143,6 @@ class MyAdapter(private val context: Context, private val dataList: ArrayList<My
         if(clickPosition >= 0){
             //找出點擊位置的項目，將其資料內容刪除
             dataList.removeAt(clickPosition)
-            //更新畫面上移除的項目
-            notifyItemRemoved(clickPosition)
             //重置點擊位置
             clickPosition = -1
         }
@@ -122,7 +154,5 @@ class MyAdapter(private val context: Context, private val dataList: ArrayList<My
     fun deleteAll(){
         //清除資料
         dataList.clear()
-        //更新全畫面
-        notifyDataSetChanged()
     }
 }

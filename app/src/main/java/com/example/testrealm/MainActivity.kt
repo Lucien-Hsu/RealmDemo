@@ -42,17 +42,17 @@ class MainActivity : AppCompatActivity() {
         val deleteListener: (Int, Int) -> Unit = { index, itemCount ->
             Log.d("TAG", "刪除範圍: 從 $index 開始變動 $itemCount 個項目")
             //刷新 UI
-            adapter.notifyItemRangeRemoved(index, itemCount - 1)
+            adapter.notifyItemRangeRemoved(index, itemCount)
         }
         val insertListener: (Int, Int) -> Unit = { index, itemCount ->
             Log.d("TAG", "新增範圍: 從 $index 開始變動 $itemCount 個項目")
             //刷新 UI
-            adapter.notifyItemRangeInserted(index, itemCount - 1)
+            adapter.notifyItemRangeInserted(index, itemCount)
         }
         val modifyListener: (Int, Int) -> Unit = { index, itemCount ->
             Log.d("TAG", "修改範圍: 從 $index 開始變動 $itemCount 個項目")
             //刷新 UI
-            adapter.notifyItemRangeChanged(index, itemCount - 1)
+            adapter.notifyItemRangeChanged(index, itemCount)
         }
         //爲資料庫變化設定監聽器
         myViewModel.addChangeListenerToRealm(deleteListener, insertListener, modifyListener)
