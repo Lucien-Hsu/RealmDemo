@@ -20,7 +20,7 @@ class MyAdapter(private val context: Context, private val dataList: ArrayList<My
     var itemDBId: Long = -1
 
     //以 context 建立 LayoutInflater
-    val myLayoutInflater: LayoutInflater = LayoutInflater.from(context)
+    private val myLayoutInflater: LayoutInflater = LayoutInflater.from(context)
 
     //回傳資料筆數
     override fun getItemCount(): Int {

@@ -8,21 +8,23 @@ import io.realm.kotlin.where
 import kotlinx.coroutines.*
 
 class MyViewModel: ViewModel() {
-    var config: RealmConfiguration
+    private var config: RealmConfiguration? = null
 
     //必須將要添加監聽器的 RealmResults 設置爲強引用，例如放在類別層級，否則放在方法中會被GC。
     //Registering a change listener will not prevent the underlying RealmResults from being garbage collected.
     //If the RealmResults is garbage collected, the change listener will stop being triggered. To avoid this, keep a
     //strong reference for as long as appropriate e.g. in a class variable.
     //參考：https://stackoverflow.com/questions/43174517/android-realm-changelistener-not-being-triggered
-    lateinit var memosListener: RealmResults<Memo>
+    private lateinit var memosListener: RealmResults<Memo>
 
-    init{
+    fun initRealm(key: ByteArray){
         //設定 realm 參數
         val realmName = "My Project"
         config = RealmConfiguration.Builder()
             .name(realmName)
-//            .allowWritesOnUiThread(true)    //可跑在 UI thread
+            .encryptionKey(key)               //加密，當把資料庫從未加密變成加密時需要進行資料庫遷移，反之也一樣要遷移
+//            .allowWritesOnUiThread(true)    //可在 UI thread 寫入
+//            .allowQueriesOnUiThread(true)   //可在 UI thread 查詢
             .deleteRealmIfMigrationNeeded()   //在需要資料庫遷移時直接刪掉資料庫
             .build()
     }
@@ -33,7 +35,7 @@ class MyViewModel: ViewModel() {
     fun addChangeListenerToRealm(deleteListener: (Int, Int) -> Unit,
                                  insertListener: (Int, Int) -> Unit,
                                  modifyListener: (Int, Int) -> Unit){
-        val uiThreadRealm = Realm.getInstance(config)
+        val uiThreadRealm = Realm.getInstance(config!!)
 
         memosListener = uiThreadRealm.where<Memo>().findAllAsync()
         memosListener.addChangeListener{ collection, changeSet ->
@@ -73,7 +75,7 @@ class MyViewModel: ViewModel() {
         val itemList = arrayListOf<MyData>()
         viewModelScope.launch(Dispatchers.IO) {
             //用參數建立 Realm 物件
-            val backgroundThreadRealm: Realm = Realm.getInstance(config)
+            val backgroundThreadRealm: Realm = Realm.getInstance(config!!)
 
             //「查詢」
             // 取出所有 realm 中的 memo
@@ -105,7 +107,7 @@ class MyViewModel: ViewModel() {
 
             val results: Deferred<Pair<Boolean, MyData>> = viewModelScope.async(Dispatchers.IO) {
                 //用參數建立 Realm 物件
-                val backgroundThreadRealm: Realm = Realm.getInstance(config)
+                val backgroundThreadRealm: Realm = Realm.getInstance(config!!)
                 //「查詢」
                 // 取出所有 realm 中的 memo
                 val memos = backgroundThreadRealm.where<Memo>().findAll()
@@ -144,7 +146,7 @@ class MyViewModel: ViewModel() {
         val result = viewModelScope.async(Dispatchers.IO){
             var resultAsync = false
             //用參數建立 Realm 物件
-            val backgroundThreadRealm: Realm = Realm.getInstance(config)
+            val backgroundThreadRealm: Realm = Realm.getInstance(config!!)
 
             if(dataId > 0) {
                 //修改記事
@@ -176,7 +178,7 @@ class MyViewModel: ViewModel() {
         val result: Deferred<Boolean> = viewModelScope.async(Dispatchers.IO) {
             var resultAsync = false
             //用參數建立 Realm 物件
-            val backgroundThreadRealm: Realm = Realm.getInstance(config)
+            val backgroundThreadRealm: Realm = Realm.getInstance(config!!)
 
             if(dataId > 0){
                 Log.d("TAG", "要刪除的 Id: $dataId")
@@ -205,7 +207,7 @@ class MyViewModel: ViewModel() {
         //刪除資料庫資料
         viewModelScope.launch(Dispatchers.IO) {
             //用參數建立 Realm 物件
-            val backgroundThreadRealm: Realm = Realm.getInstance(config)
+            val backgroundThreadRealm: Realm = Realm.getInstance(config!!)
 
             //「刪除」
             // 所有對 realm 的修改都必須在 write block 內

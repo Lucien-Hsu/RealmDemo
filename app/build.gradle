@@ -64,4 +64,7 @@ dependencies {
 
     //viewModelScope
     implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:2.3.1"
+
+    //ViewModel 若要在 activity 使用委託則要加入此相依性
+    implementation "androidx.activity:activity-ktx:1.2.3"
 }

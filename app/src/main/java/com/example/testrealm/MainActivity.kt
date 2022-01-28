@@ -9,9 +9,9 @@ import android.view.Menu
 import android.view.MenuItem
 import android.widget.EditText
 import android.widget.Toast
+import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.ViewModelProvider
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import io.realm.*
@@ -20,10 +20,10 @@ import io.realm.annotations.Required
 
 class MainActivity : AppCompatActivity() {
 
-    lateinit var myViewModel: MyViewModel
-    lateinit var context:Context
+    private val myViewModel: MyViewModel by viewModels()
+    private lateinit var context:Context
 
-    lateinit var rc: RecyclerView
+    private lateinit var rc: RecyclerView
     //adapter 會用來控制 RecyclerView 畫面更新，所以需全域使用較方便
     private lateinit var adapter: MyAdapter
 
@@ -32,11 +32,11 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
         context = this
 
-        //創建 ViewModel
-        myViewModel = ViewModelProvider(this).get(MyViewModel::class.java)
-
-        //初始化 RecyclerView
-        initRecyclerView()
+        //取得密鑰
+        val aesKey512: String = "A123456789ABCDEF" + "A123456789ABCDEF" + "A123456789ABCDEF" + "A123456789ABCDEF"    //key 需爲 64 bytes（即 64 字元）
+        val key = aesKey512.toByteArray()
+        //用密鑰初始化 Realm
+        myViewModel.initRealm(key)
 
         //先建立三個監聽器所需的操作
         val deleteListener: (Int, Int) -> Unit = { index, itemCount ->
@@ -56,6 +56,9 @@ class MainActivity : AppCompatActivity() {
         }
         //爲資料庫變化設定監聽器
         myViewModel.addChangeListenerToRealm(deleteListener, insertListener, modifyListener)
+
+        //初始化 RecyclerView
+        initRecyclerView()
     }
 
     private fun initRecyclerView() {
@@ -215,7 +218,7 @@ enum class MemoStatus {
     Normal,
 }
 
-open class Memo() : RealmObject() {
+open class Memo : RealmObject() {
     //主 key
     //注意，資料庫會以 Long 儲存，用 Int 在這邊是不行的
     @PrimaryKey
