@@ -36,6 +36,9 @@ class MainActivity : AppCompatActivity() {
 
         //初始化 RecyclerView
         initRecyclerView()
+
+        //爲資料庫變化設定監聽器
+        myViewModel.addChangeListenerToRealm()
     }
 
     private fun initRecyclerView() {

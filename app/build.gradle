@@ -38,9 +38,9 @@ android {
 }
 
 //如果 realm 需要在後端與手機端同步才需要加上這部分
-realm{
-    syncEnabled = true
-}
+//realm{
+//    syncEnabled = true
+//}
 
 dependencies {
 
