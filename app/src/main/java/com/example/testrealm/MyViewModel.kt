@@ -9,6 +9,8 @@ import kotlinx.coroutines.*
 
 class MyViewModel: ViewModel() {
     private var config: RealmConfiguration? = null
+    //寫在 class 層，之後才能在 onCleared() 釋放
+    private lateinit var uiThreadRealm: Realm
 
     //必須將要添加監聽器的 RealmResults 設置爲強引用，例如放在類別層級，否則放在方法中會被GC。
     //Registering a change listener will not prevent the underlying RealmResults from being garbage collected.
@@ -16,6 +18,11 @@ class MyViewModel: ViewModel() {
     //strong reference for as long as appropriate e.g. in a class variable.
     //參考：https://stackoverflow.com/questions/43174517/android-realm-changelistener-not-being-triggered
     private lateinit var memosListener: RealmResults<Memo>
+
+    override fun onCleared() {
+        super.onCleared()
+        uiThreadRealm.close()
+    }
 
     fun initRealm(key: ByteArray){
         //設定 realm 參數
@@ -32,35 +39,53 @@ class MyViewModel: ViewModel() {
     /**
      * 爲資料變化設定監聽器
      */
-    fun addChangeListenerToRealm(deleteListener: (Int, Int) -> Unit,
-                                 insertListener: (Int, Int) -> Unit,
-                                 modifyListener: (Int, Int) -> Unit){
-        val uiThreadRealm = Realm.getInstance(config!!)
+    fun addChangeListenerToRealm(adapter: MyAdapter){
+        uiThreadRealm = Realm.getInstance(config!!)
 
         memosListener = uiThreadRealm.where<Memo>().findAllAsync()
         memosListener.addChangeListener{ collection, changeSet ->
             //刪除範圍
             val deletions = changeSet.deletionRanges
             for (range in deletions) {
-                deleteListener(range.startIndex, range.length)
+                val index = range.startIndex
+                val itemCount = range.length
+
+                Log.d("TAG", "刪除範圍: 從 $index 開始變動 $itemCount 個項目")
+                //刷新 UI
+                adapter.notifyItemRangeRemoved(index, itemCount)
             }
-            //想取指標來操作的話可以這樣寫
-            // process deletions in reverse order if maintaining parallel data structures so indices don't change as you iterate
+//            //想取指標來操作的話可以這樣寫
+//            // process deletions in reverse order if maintaining parallel data structures so indices don't change as you iterate
 //            for (i in deletions.indices.reversed()) {
 //                val range = deletions[i]
-//                deleteListener(range.startIndex, range.length)
+//                val index = range.startIndex
+//                val itemCount = range.length
+//
+//                Log.d("TAG", "刪除範圍: 從 $index 開始變動 $itemCount 個項目")
+//                //刷新 UI
+//                adapter.notifyItemRangeRemoved(index, itemCount)
 //            }
 
             //新增範圍
             val insertions = changeSet.insertionRanges
             for (range in insertions) {
-                insertListener(range.startIndex, range.length)
+                val index = range.startIndex
+                val itemCount = range.length
+
+                Log.d("TAG", "新增範圍: 從 $index 開始變動 $itemCount 個項目")
+                //刷新 UI
+                adapter.notifyItemRangeInserted(index, itemCount)
             }
 
             //修改範圍
             val modifications = changeSet.changeRanges
             for (range in modifications) {
-                modifyListener(range.startIndex, range.length)
+                val index = range.startIndex
+                val itemCount = range.length
+
+                Log.d("TAG", "修改範圍: 從 $index 開始變動 $itemCount 個項目")
+                //刷新 UI
+                adapter.notifyItemRangeChanged(index, itemCount)
             }
         }
     }

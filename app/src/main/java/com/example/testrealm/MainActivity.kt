@@ -38,27 +38,11 @@ class MainActivity : AppCompatActivity() {
         //用密鑰初始化 Realm
         myViewModel.initRealm(key)
 
-        //先建立三個監聽器所需的操作
-        val deleteListener: (Int, Int) -> Unit = { index, itemCount ->
-            Log.d("TAG", "刪除範圍: 從 $index 開始變動 $itemCount 個項目")
-            //刷新 UI
-            adapter.notifyItemRangeRemoved(index, itemCount)
-        }
-        val insertListener: (Int, Int) -> Unit = { index, itemCount ->
-            Log.d("TAG", "新增範圍: 從 $index 開始變動 $itemCount 個項目")
-            //刷新 UI
-            adapter.notifyItemRangeInserted(index, itemCount)
-        }
-        val modifyListener: (Int, Int) -> Unit = { index, itemCount ->
-            Log.d("TAG", "修改範圍: 從 $index 開始變動 $itemCount 個項目")
-            //刷新 UI
-            adapter.notifyItemRangeChanged(index, itemCount)
-        }
-        //爲資料庫變化設定監聽器
-        myViewModel.addChangeListenerToRealm(deleteListener, insertListener, modifyListener)
-
         //初始化 RecyclerView
         initRecyclerView()
+
+        //爲資料庫變化設定監聽器
+        myViewModel.addChangeListenerToRealm(adapter)
     }
 
     private fun initRecyclerView() {
