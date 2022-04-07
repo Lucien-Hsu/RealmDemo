@@ -21,6 +21,8 @@ class MyViewModel: ViewModel() {
 
     override fun onCleared() {
         super.onCleared()
+        //移除監聽器
+        memosListener.removeAllChangeListeners()
         uiThreadRealm.close()
     }
 
