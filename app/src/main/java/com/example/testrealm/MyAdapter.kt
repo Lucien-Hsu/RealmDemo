@@ -111,6 +111,7 @@ class MyAdapter(private val context: Context, private val dataList: ArrayList<My
     fun addItem(data: MyData){
         //新增資料
         dataList.add(data)
+        notifyItemInserted(itemCount)
     }
 
     /**

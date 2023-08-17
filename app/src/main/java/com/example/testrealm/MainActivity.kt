@@ -12,11 +12,15 @@ import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import io.realm.*
 import io.realm.annotations.PrimaryKey
 import io.realm.annotations.Required
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 class MainActivity : AppCompatActivity() {
 
@@ -182,15 +186,21 @@ class MainActivity : AppCompatActivity() {
                 if (TextUtils.isEmpty(memoStr)) {
                     Toast.makeText(applicationContext, "請輸入記事內容", Toast.LENGTH_SHORT).show()
                 } else {
-                    //新增記事
-                    val results = myViewModel.addDBData(memoStr)
-                    val result = results.first
-                    val resultData = results.second
-                    if(result){
-                        //新增 recyclerView 資料
-                        adapter.addItem(resultData)
-                        Toast.makeText(applicationContext, "新增成功！", Toast.LENGTH_SHORT).show()
+                    lifecycleScope.launch(Dispatchers.IO){
+                        //新增記事
+                        val results = myViewModel.addDBData(memoStr)
+                        val result = results.first
+                        val resultData = results.second
+
+                        if(result) {
+                            withContext(Dispatchers.Main){
+                                //新增 recyclerView 資料
+                                adapter.addItem(resultData)
+                                Toast.makeText(applicationContext, "新增成功:$resultData", Toast.LENGTH_SHORT).show()
+                            }
+                        }
                     }
+
                 }
             }
             .show()

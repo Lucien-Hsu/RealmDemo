@@ -3,9 +3,16 @@ package com.example.testrealm
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import io.realm.*
+import io.realm.Realm
+import io.realm.RealmConfiguration
+import io.realm.RealmResults
 import io.realm.kotlin.where
-import kotlinx.coroutines.*
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
 
 class MyViewModel: ViewModel() {
     private var config: RealmConfiguration? = null
@@ -130,39 +137,37 @@ class MyViewModel: ViewModel() {
     /**
      * 新增一個項目
      */
-    fun addDBData(dataStr: String): Pair<Boolean, MyData> = runBlocking {
+    suspend fun addDBData(dataStr: String): Pair<Boolean, MyData> =
+        withContext(viewModelScope.coroutineContext + Dispatchers.IO) {
+            //用參數建立 Realm 物件
+            val backgroundThreadRealm: Realm = Realm.getInstance(config!!)
+            //「查詢」
+            // 取出所有 realm 中的 memo
+            val memos = backgroundThreadRealm.where<Memo>().findAll()
 
-            val results: Deferred<Pair<Boolean, MyData>> = viewModelScope.async(Dispatchers.IO) {
-                //用參數建立 Realm 物件
-                val backgroundThreadRealm: Realm = Realm.getInstance(config!!)
-                //「查詢」
-                // 取出所有 realm 中的 memo
-                val memos = backgroundThreadRealm.where<Memo>().findAll()
-
-                //「新增」
-                val memo = Memo()
-                //遞增流水號
-                memo.id = (memos.max("id") as Long? ?: 0) + 1
-                memo.status = MemoStatus.Normal.name
-                memo.memoContent = dataStr
+            //「新增」
+            val memo = Memo()
+            //遞增流水號
+            memo.id = (memos.max("id") as Long? ?: 0) + 1
+            memo.status = MemoStatus.Normal.name
+            memo.memoContent = dataStr
 //                Log.d("TAG", "新增前的 memos: $memos")
-                // 所有對 realm 的修改都必須在 write block 內
-                backgroundThreadRealm.executeTransaction { transactionRealm ->
-                    transactionRealm.insert(memo)
-                }
-//                Log.d("TAG", "[新增 memo 到資料庫] id: ${memo.id} memoContent: ${memo.memoContent}")
-                Log.d("TAG", "新增後的 memos: $memos")
-
-                val result = true
-                val myData = memoToMyData(memo)
-
-                //最後要釋放 Realm 物件
-                backgroundThreadRealm.close()
-
-                Pair(result, myData)
+            // 所有對 realm 的修改都必須在 write block 內
+            backgroundThreadRealm.executeTransaction { transactionRealm ->
+                transactionRealm.insert(memo)
             }
+//                Log.d("TAG", "[新增 memo 到資料庫] id: ${memo.id} memoContent: ${memo.memoContent}")
+            Log.d("TAG", "新增後的 memos: $memos")
 
-            results.await()
+            val result = true
+            val myData = memoToMyData(memo)
+
+            //最後要釋放 Realm 物件
+            backgroundThreadRealm.close()
+
+//            Thread.sleep(1000)
+
+            Pair(result, myData)
         }
 
     /**
